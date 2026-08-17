@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เกมจับคู่ตัวอักษรไทย</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Sarabun', 'Tahoma', sans-serif;
+    background: linear-gradient(135deg, #fdf2f8 0%, #eef2ff 50%, #f0fdfa 100%);
+    min-height: 100vh;
+    margin: 0;
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .card {
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+    padding: 32px;
+    width: 100%;
+    max-width: 640px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 24px;
+    color: #4c1d95;
+    margin: 0 0 4px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #7c7c8a;
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+  .stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    font-size: 15px;
+  }
+  .stats span { color: #6b6b78; }
+  .stats b { color: #1f1f2e; font-size: 18px; }
+  #reset-btn {
+    background: #f472b6;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+    box-shadow: 0 3px 10px rgba(244,114,182,0.4);
+  }
+  #reset-btn:hover { background: #ec4899; }
+  .target-wrap {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .target-label {
+    font-size: 13px;
+    color: #9ca3af;
+    margin-bottom: 10px;
+  }
+  #target {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 110px;
+    height: 110px;
+    font-size: 52px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #a78bfa, #f472b6);
+    color: white;
+    border-radius: 20px;
+    box-shadow: 0 8px 20px rgba(167,139,250,0.4);
+  }
+  #options {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .opt-btn {
+    height: 76px;
+    font-size: 30px;
+    font-weight: 700;
+    border-radius: 16px;
+    cursor: pointer;
+    background: #ffffff;
+    color: #1f1f2e;
+    transition: transform 0.1s ease;
+  }
+  .opt-btn:hover:not(:disabled) { transform: translateY(-2px); }
+  .opt-btn:disabled { cursor: default; opacity: 0.55; }
+  .opt-btn.border-0 { border: 4px solid #f87171; }
+  .opt-btn.border-1 { border: 4px solid #fb923c; }
+  .opt-btn.border-2 { border: 4px solid #fbbf24; }
+  .opt-btn.border-3 { border: 4px solid #a3e635; }
+  .opt-btn.border-4 { border: 4px solid #34d399; }
+  .opt-btn.border-5 { border: 4px solid #22d3ee; }
+  .opt-btn.border-6 { border: 4px solid #818cf8; }
+  .opt-btn.border-7 { border: 4px solid #e879f9; }
+  .opt-btn.correct {
+    background: #dcfce7 !important;
+    border-color: #22c55e !important;
+    color: #15803d !important;
+  }
+  .opt-btn.wrong {
+    background: #fee2e2 !important;
+    border-color: #ef4444 !important;
+    color: #b91c1c !important;
+    animation: shake 0.35s;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  #feedback {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 700;
+    min-height: 26px;
+    margin-bottom: 8px;
+  }
+  #feedback.correct-text { color: #16a34a; }
+  #feedback.wrong-text { color: #dc2626; }
+  #win-msg {
+    display: none;
+    text-align: center;
+    margin-top: 12px;
+    padding: 20px;
+    background: linear-gradient(135deg, #fef3c7, #fce7f3);
+    border-radius: 16px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #92400e;
+  }
+
+  /* ===== ระบบเข้าสู่ระบบ / Dashboard ===== */
+  .hidden { display:none !important; }
+  #auth-screen { max-width:760px; width:100%; }
+  .auth-card { background:#fff; border-radius:24px; padding:32px; box-shadow:0 10px 40px rgba(0,0,0,.12); }
+  .role-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px; }
+  .role-btn { border:2px solid #ddd; background:#fff; border-radius:18px; padding:22px 16px; cursor:pointer; font-size:20px; font-weight:700; }
+  .role-btn:hover { transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.08); }
+  .role-btn.teacher { border-color:#818cf8; }
+  .role-btn.student { border-color:#34d399; }
+  .modal-backdrop { position:fixed; inset:0; background:rgba(15,23,42,.48); display:flex; align-items:center; justify-content:center; padding:18px; z-index:1000; }
+  .modal { width:min(560px,100%); max-height:90vh; overflow:auto; background:#fff; border-radius:22px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,.28); }
+  .modal h2 { margin-top:0; color:#312e81; }
+  .form-group { margin-bottom:14px; }
+  .form-group label { display:block; margin-bottom:6px; font-weight:700; color:#374151; }
+  .form-group input, .form-group select { width:100%; padding:12px 14px; border:1px solid #d1d5db; border-radius:12px; font-size:16px; font-family:inherit; }
+  .action-row { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+  .primary-btn,.secondary-btn,.danger-btn { border:none; border-radius:12px; padding:11px 18px; cursor:pointer; font-weight:700; font-family:inherit; }
+  .primary-btn { background:#6366f1; color:#fff; } .secondary-btn { background:#e5e7eb; color:#111827; } .danger-btn { background:#ef4444; color:#fff; }
+  .error-text { color:#dc2626; font-weight:700; min-height:24px; margin-top:8px; }
+  #teacher-dashboard { max-width:1200px; width:100%; }
+  .dash-card { background:#fff; border-radius:22px; padding:24px; box-shadow:0 10px 35px rgba(0,0,0,.10); }
+  .dash-head { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:18px; }
+  .dash-head h2 { margin:0; color:#312e81; }
+  .status-pill { padding:7px 12px; border-radius:999px; background:#dcfce7; color:#166534; font-weight:700; font-size:13px; }
+  .filters { display:grid; grid-template-columns:1fr 1fr 1fr 1fr auto; gap:10px; margin-bottom:18px; }
+  .filters input,.filters select { padding:10px 12px; border:1px solid #d1d5db; border-radius:10px; font-family:inherit; }
+  .summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+  .summary-box { background:linear-gradient(135deg,#f5f3ff,#eff6ff); border-radius:16px; padding:16px; }
+  .summary-box small { color:#6b7280; } .summary-box strong { display:block; font-size:24px; margin-top:4px; }
+  .table-wrap { overflow:auto; border:1px solid #e5e7eb; border-radius:14px; }
+  table { border-collapse:collapse; width:100%; min-width:850px; }
+  th,td { padding:11px 12px; text-align:left; border-bottom:1px solid #eee; white-space:nowrap; }
+  th { background:#f8fafc; position:sticky; top:0; z-index:1; }
+  .student-topbar { max-width:760px; width:100%; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .student-user { background:rgba(255,255,255,.88); padding:10px 14px; border-radius:12px; font-weight:700; }
+  @media(max-width:800px){ .filters{grid-template-columns:1fr 1fr;} .summary-grid{grid-template-columns:1fr 1fr;} }
+  @media(max-width:600px){ .role-grid{grid-template-columns:1fr;} .filters{grid-template-columns:1fr;} .summary-grid{grid-template-columns:1fr 1fr;} }
+
+</style>
+</head>
+<body>
+<body>
+<div id="auth-screen">
+  <div class="auth-card">
+    <h1>เกมจับคู่ตัวอักษรไทย</h1>
+    <div class="subtitle">เลือกรูปแบบการเข้าใช้งาน</div>
+    <div class="role-grid">
+      <button class="role-btn teacher" id="teacher-login-btn">👩‍🏫 ครู / ผู้สอน</button>
+      <button class="role-btn student" id="student-login-btn">👨‍🎓 นักเรียน</button>
+    </div>
+    <div id="auth-error" class="error-text"></div>
+  </div>
+</div>
+
+<div id="student-app" class="hidden">
+  <div class="student-topbar">
+    <div class="student-user" id="student-user-label"></div>
+    <button class="secondary-btn" id="student-logout">ออกจากระบบ</button>
+  </div>
+  <div class="card">
+    <h1>เกมจับคู่ตัวอักษรไทย</h1>
+    <div class="subtitle">เลือกตัวอักษรที่จับคู่กับตัวอักษรด้านบนให้ถูกต้อง</div>
+    <div class="stats">
+      <span>ข้อที่ <b id="round">1</b>/15</span>
+      <button id="reset-btn">เริ่มใหม่</button>
+      <span>คะแนน: <b id="score">0</b></span>
+    </div>
+    <div class="target-wrap">
+      <div class="target-label">จับคู่กับตัวอักษรนี้</div>
+      <div id="target"></div>
+    </div>
+    <div id="options"></div><div id="feedback"></div><div id="win-msg"></div>
+  </div>
+</div>
+
+<div id="teacher-dashboard" class="hidden">
+  <div class="dash-card">
+    <div class="dash-head">
+      <div><h2>แดชบอร์ดครู</h2><div class="subtitle" style="text-align:left;margin:4px 0 0">ติดตามผลการทำแบบฝึกหัดของนักเรียน</div></div>
+      <div><span class="status-pill">● อัปเดตแบบเรียลไทม์</span> <button class="secondary-btn" id="teacher-logout">ออกจากระบบ</button></div>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-box"><small>นักเรียนทั้งหมด</small><strong id="sum-students">0</strong></div>
+      <div class="summary-box"><small>กำลังทำแบบฝึก</small><strong id="sum-active">0</strong></div>
+      <div class="summary-box"><small>ทำจบแล้ว</small><strong id="sum-done">0</strong></div>
+      <div class="summary-box"><small>คะแนนเฉลี่ย</small><strong id="sum-avg">0</strong></div>
+    </div>
+    <div class="filters">
+      <select id="filter-branch"><option value="">ทุกสาขาวิชา</option><option>การจัดการฯ</option><option>การตลาด</option><option>การบัญชี</option></select>
+      <input id="filter-id" placeholder="ค้นหารหัสประจำตัว">
+      <input id="filter-name" placeholder="ค้นหาชื่อ - สกุล">
+      <input id="filter-search" placeholder="ค้นหาทั้งหมด">
+      <button class="secondary-btn" id="clear-filters">ล้างตัวกรอง</button>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>สาขาวิชา</th><th>รหัสประจำตัว</th><th>ชื่อ - นามสกุล</th><th>คะแนน</th><th>ความคืบหน้า</th><th>สถานะ</th><th>เวลาล่าสุด</th></tr></thead><tbody id="student-table"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+<script>
+// ===== ตั้งค่าระบบ =====
+// โหมดเริ่มต้นเก็บข้อมูลในเบราว์เซอร์ และซิงก์ข้ามแท็บด้วย BroadcastChannel/localStorage
+// สำหรับใช้งานจริงหลายเครื่อง ให้เชื่อม Firebase Realtime Database ตามคำแนะนำท้ายไฟล์
+const TEACHER_CODE = '2516';
+const STORAGE_KEY = 'thaiMatchingStudentsV2';
+const SESSION_KEY = 'thaiMatchingSessionV2';
+const CHANNEL_NAME = 'thaiMatchingRealtimeV2';
+const TOTAL_ROUNDS = 15;
+
+const pairs = [
+  ['โ','ด'], ['ฌ','เ'], ['ฑ','พ'], ['ธ','ะ'], ['๊','ี'], ['๋','่'], ['ณ','ร'], ['็','้'],
+  ['ฎ','ำ'], ['ฏ','ก'], ['"','ไ'], ['ษ','า'], ['ฯ','น'], ['ศ','ส'], ['ฆ','ห']
+];
+const bottomChars = pairs.map(p => p[1]);
+let order=[], roundIndex=0, score=0, currentTarget=null, correctAnswer=null, solved=false;
+let currentStudent=null;
+let realtimeChannel=null;
+
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function getStudents(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');}catch(e){return [];} }
+function saveStudents(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); broadcast({type:'students-updated'}); }
+function broadcast(msg){ try{ if(realtimeChannel) realtimeChannel.postMessage(msg); }catch(e){} localStorage.setItem(STORAGE_KEY+'_signal', Date.now().toString()); }
+function upsertStudent(student){ const list=getStudents(); const i=list.findIndex(x=>x.id===student.id); if(i>=0) list[i]={...list[i],...student}; else list.push(student); localStorage.setItem(STORAGE_KEY,JSON.stringify(list)); broadcast({type:'students-updated'}); }
+
+function showScreen(id){ ['auth-screen','student-app','teacher-dashboard'].forEach(x=>document.getElementById(x).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
+function showModal(html){ document.getElementById('modal-root').innerHTML='<div class="modal-backdrop" id="modal-backdrop"><div class="modal">'+html+'</div></div>'; }
+function closeModal(){ document.getElementById('modal-root').innerHTML=''; }
+function setAuthError(t){ document.getElementById('auth-error').textContent=t||''; }
+
+function teacherLogin(){
+  showModal(`<h2>เข้าสู่ระบบครู</h2><div class="form-group"><label>รหัสครู</label><input id="teacher-code" type="password" inputmode="numeric" maxlength="10" placeholder="กรอกรหัสครู"></div><div id="teacher-error" class="error-text"></div><div class="action-row"><button class="secondary-btn" onclick="closeModal()">ยกเลิก</button><button class="primary-btn" id="teacher-submit">เข้าสู่แดชบอร์ด</button></div>`);
+  document.getElementById('teacher-submit').onclick=()=>{ const c=document.getElementById('teacher-code').value.trim(); if(c!==TEACHER_CODE){document.getElementById('teacher-error').textContent='รหัสครูไม่ถูกต้อง';return;} closeModal(); localStorage.setItem(SESSION_KEY,JSON.stringify({role:'teacher'})); showTeacherDashboard(); };
+  setTimeout(()=>document.getElementById('teacher-code').focus(),50);
+}
+function studentRegister(){
+  showModal(`<h2>ลงทะเบียนนักเรียน</h2><div class="form-group"><label>สาขาวิชา</label><select id="reg-branch"><option value="">-- เลือกสาขาวิชา --</option><option>การจัดการฯ</option><option>การตลาด</option><option>การบัญชี</option></select></div><div class="form-group"><label>รหัสประจำตัว</label><input id="reg-id" maxlength="30" placeholder="เช่น 669001"></div><div class="form-group"><label>ชื่อ-นามสกุล</label><input id="reg-name" maxlength="100" placeholder="กรอกชื่อและนามสกุล"></div><div id="student-error" class="error-text"></div><div class="action-row"><button class="secondary-btn" onclick="closeModal()">ยกเลิก</button><button class="primary-btn" id="student-submit">เข้าเกม</button></div>`);
+  document.getElementById('student-submit').onclick=()=>{
+    const branch=document.getElementById('reg-branch').value, id=document.getElementById('reg-id').value.trim(), name=document.getElementById('reg-name').value.trim();
+    const er=document.getElementById('student-error');
+    if(!branch||!id||!name){er.textContent='กรุณากรอกข้อมูลให้ครบทุกช่อง';return;}
+    currentStudent={id, name, branch, score:0, progress:0, status:'กำลังทำ', updatedAt:new Date().toISOString()};
+    upsertStudent(currentStudent); localStorage.setItem(SESSION_KEY,JSON.stringify({role:'student',studentId:id})); closeModal(); startStudent();
+  };
+}
+
+function startStudent(){
+  const sess=JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); const list=getStudents(); currentStudent=list.find(x=>x.id===sess?.studentId)||currentStudent;
+  if(!currentStudent){showScreen('auth-screen');return;}
+  document.getElementById('student-user-label').textContent=`${currentStudent.name} | ${currentStudent.branch} | ${currentStudent.id}`;
+  showScreen('student-app'); resetGame();
+}
+function logout(){ localStorage.removeItem(SESSION_KEY); currentStudent=null; showScreen('auth-screen'); setAuthError(''); }
+
+document.getElementById('teacher-login-btn').onclick=teacherLogin;
+document.getElementById('student-login-btn').onclick=studentRegister;
+document.getElementById('teacher-logout').onclick=logout;
+document.getElementById('student-logout').onclick=logout;
+
+function syncStudent(){
+  if(!currentStudent) return;
+  currentStudent.score=score; currentStudent.progress=Math.min(roundIndex,TOTAL_ROUNDS); currentStudent.status=roundIndex>=TOTAL_ROUNDS?'ทำจบแล้ว':'กำลังทำ'; currentStudent.updatedAt=new Date().toISOString();
+  upsertStudent(currentStudent);
+}
+function buildRound(){
+  solved=false; const fb=document.getElementById('feedback'); fb.textContent=''; fb.className='';
+  const pairIdx=order[roundIndex]; currentTarget=pairs[pairIdx][0]; correctAnswer=pairs[pairIdx][1];
+  const options=shuffle(bottomChars); document.getElementById('target').textContent=currentTarget; document.getElementById('round').textContent=roundIndex+1; document.getElementById('score').textContent=score;
+  const optDiv=document.getElementById('options'); optDiv.innerHTML=''; options.forEach((opt,idx)=>{const btn=document.createElement('button');btn.className='opt-btn border-'+(idx%8);btn.textContent=opt;btn.onclick=()=>selectAnswer(opt,btn);optDiv.appendChild(btn);}); syncStudent();
+}
+function selectAnswer(opt,btn){
+  if(solved||btn.disabled)return; const fb=document.getElementById('feedback');
+  if(opt===correctAnswer){ solved=true; score+=1; btn.classList.add('correct'); document.querySelectorAll('.opt-btn').forEach(b=>b.disabled=true); fb.textContent='ถูกต้อง! ได้ 1 คะแนน'; fb.className='correct-text'; document.getElementById('score').textContent=score; syncStudent(); setTimeout(()=>{roundIndex++; if(roundIndex>=order.length){ document.getElementById('target').textContent='';document.getElementById('options').innerHTML='';fb.textContent='';document.getElementById('win-msg').style.display='block';document.getElementById('win-msg').textContent='จบเกมแล้ว! คะแนนรวม '+score+' คะแนน';syncStudent();}else buildRound();},700);
+  }else{score-=1;btn.classList.add('wrong');btn.disabled=true;fb.textContent='ผิด ติดลบ 1 คะแนน ลองใหม่อีกครั้ง';fb.className='wrong-text';document.getElementById('score').textContent=score;syncStudent();}
+}
+function resetGame(){order=shuffle(pairs.map((_,i)=>i));roundIndex=0;score=0;document.getElementById('win-msg').style.display='none';buildRound();}
+document.getElementById('reset-btn').onclick=resetGame;
+
+function showTeacherDashboard(){ showScreen('teacher-dashboard'); renderDashboard(); }
+function formatTime(v){ if(!v)return '-'; const d=new Date(v); return d.toLocaleString('th-TH',{dateStyle:'short',timeStyle:'medium'}); }
+function statusLabel(s){return s==='ทำจบแล้ว'?'✅ ทำจบแล้ว':'🟢 กำลังทำ';}
+function renderDashboard(){
+  const all=getStudents();
+  const branch=document.getElementById('filter-branch').value.toLowerCase(), fid=document.getElementById('filter-id').value.trim().toLowerCase(), fname=document.getElementById('filter-name').value.trim().toLowerCase(), q=document.getElementById('filter-search').value.trim().toLowerCase();
+  const filtered=all.filter(x=> (!branch||x.branch.toLowerCase()===branch) && (!fid||x.id.toLowerCase().includes(fid)) && (!fname||x.name.toLowerCase().includes(fname)) && (!q||`${x.branch} ${x.id} ${x.name}`.toLowerCase().includes(q)) ).sort((a,b)=>new Date(b.updatedAt||0)-new Date(a.updatedAt||0));
+  document.getElementById('sum-students').textContent=all.length; document.getElementById('sum-active').textContent=all.filter(x=>x.status!=='ทำจบแล้ว').length; document.getElementById('sum-done').textContent=all.filter(x=>x.status==='ทำจบแล้ว').length; const avg=all.length?(all.reduce((s,x)=>s+Number(x.score||0),0)/all.length):0; document.getElementById('sum-avg').textContent=avg.toFixed(1);
+  document.getElementById('student-table').innerHTML=filtered.map(x=>`<tr><td>${escapeHtml(x.branch)}</td><td>${escapeHtml(x.id)}</td><td>${escapeHtml(x.name)}</td><td><strong>${Number(x.score||0)}</strong></td><td>${Number(x.progress||0)}/${TOTAL_ROUNDS}</td><td>${statusLabel(x.status)}</td><td>${formatTime(x.updatedAt)}</td></tr>`).join('') || '<tr><td colspan="7" style="text-align:center;padding:24px;color:#6b7280">ยังไม่มีข้อมูล</td></tr>';
+}
+function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+['filter-branch','filter-id','filter-name','filter-search'].forEach(id=>document.getElementById(id).addEventListener(id==='filter-branch'?'change':'input',renderDashboard));
+document.getElementById('clear-filters').onclick=()=>{document.getElementById('filter-branch').value='';document.getElementById('filter-id').value='';document.getElementById('filter-name').value='';document.getElementById('filter-search').value='';renderDashboard();};
+
+function initRealtime(){
+  try{ realtimeChannel=new BroadcastChannel(CHANNEL_NAME); realtimeChannel.onmessage=e=>{ if(e.data?.type==='students-updated' && !document.getElementById('teacher-dashboard').classList.contains('hidden')) renderDashboard(); }; }catch(e){}
+  window.addEventListener('storage',e=>{ if(e.key===STORAGE_KEY+'_signal' && !document.getElementById('teacher-dashboard').classList.contains('hidden')) renderDashboard(); });
+}
+initRealtime();
+const sess=JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); if(sess?.role==='teacher') showTeacherDashboard(); else if(sess?.role==='student') startStudent(); else showScreen('auth-screen');
+</script>
+
+<!--
+การใช้งานหลายเครื่องแบบเรียลไทม์จริง:
+1) สร้าง Firebase Realtime Database แล้วนำ Firebase Web SDK มาเชื่อมในไฟล์นี้
+2) บันทึกข้อมูลนักเรียน/คะแนนที่ path students/{id}
+3) ใช้ onValue() เพื่ออัปเดตแดชบอร์ดครูแบบเรียลไทม์
+ขณะนี้ไฟล์ทำงานแบบ local realtime ระหว่างแท็บ/หน้าต่างบนเครื่องเดียวกันโดยไม่ต้องตั้งค่าเซิร์ฟเวอร์
+-->
+</body>
+</html>
